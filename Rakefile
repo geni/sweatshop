@@ -13,7 +13,7 @@ begin
     s.description = "See summary"
     s.authors = ["Amos Elliston"]
     s.files =  FileList["[A-Z]*", "install.rb", "{lib,test,config,script}/**/*"]
-    s.add_dependency('carrot', '= 0.7.0')
+    s.add_dependency('carrot', '= 1.2.0')
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
