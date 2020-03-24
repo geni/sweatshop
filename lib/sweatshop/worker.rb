@@ -117,10 +117,6 @@ module Sweatshop
       Sweatshop.workers
     end
 
-    def self.config
-      Sweatshop.config
-    end
-
     def self.log(msg)
       Sweatshop.log(msg)
     end
