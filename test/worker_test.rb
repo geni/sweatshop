@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../lib/sweatshop')
 require File.expand_path(File.dirname(__FILE__) + '/test_helper'     )
 require File.expand_path(File.dirname(__FILE__) + '/hello_worker'    )
 
-class WorkerTest < Test::Unit::TestCase
+class WorkerTest < TestHelper
 
   def setup
     File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
@@ -14,7 +14,7 @@ class WorkerTest < Test::Unit::TestCase
     File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
   end
 
-  should "daemonize" do
+  test "daemonize" do
     enable_server do
       HelloWorker.async_hello('Amos')
   
@@ -29,7 +29,7 @@ class WorkerTest < Test::Unit::TestCase
     end
   end
 
-  should "connect to fallback servers if the default one is down" do
+  test "connect to fallback servers if the default one is down" do
     enable_server do
       Sweatshop.config['default']['cluster'] =
         [
@@ -54,7 +54,8 @@ class WorkerTest < Test::Unit::TestCase
     end
   end
 
-  should "exception handler" do
+  test "exception handler" do
+    HelloWorker.logger=nil
     exception = nil
     HelloWorker.on_exception do |e|
       exception = e
