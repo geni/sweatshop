@@ -37,24 +37,13 @@ class WorkerTest < TestHelper
         ]
       HelloWorker.async_hello('Amos')
       task = HelloWorker.dequeue
+      HelloWorker.confirm
+
       assert_equal 'Amos', task[:args].first
-
-      HelloWorker.queue.client = nil
-
-      HelloWorker.stop
-      Sweatshop.config['default']['cluster'] =
-        [
-         'localhost:5671',# valid
-         'localhost:5672' # invalid
-        ]
-  
-      HelloWorker.async_hello('Amos')
-      assert_equal 'Amos', HelloWorker.dequeue[:args].first
     end
   end
 
   test "exception handler" do
-    HelloWorker.logger=nil
     exception = nil
     HelloWorker.on_exception do |e|
       exception = e
