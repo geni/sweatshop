@@ -63,6 +63,10 @@ module MessageQueue
               :vhost  => @opts['vhost'],
               :insist => @opts['insist']
             )
+
+            # check server connection
+            @client.server
+
             return @client
           rescue Carrot::AMQP::Server::ServerDown => e
             if i == (@opts['cluster'].size-1)
