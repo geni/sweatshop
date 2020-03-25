@@ -1,22 +1,15 @@
 require 'test_helper'
 
 class SweatshopTest < TestHelper
-  Sweatshop.workers = []
-
-  class HelloWorker < Sweatshop::Worker
-    def hello(name)
-      "Hi, #{name}"
-    end
-  end
 
   class GroupedWorker < Sweatshop::Worker
     queue_group :foo
   end
 
-  test "group workers" do
-    assert_equal [HelloWorker, GroupedWorker], Sweatshop.workers_in_group(:all)
+  test 'workers_in_group' do
+    assert_equal [HelloWorker, SweatshopTest::GroupedWorker].sort_by(&:name), Sweatshop.workers_in_group(:all).sort_by(&:name)
     assert_equal [HelloWorker],   Sweatshop.workers_in_group(:default)
-    assert_equal [GroupedWorker], Sweatshop.workers_in_group(:foo)
+    assert_equal [SweatshopTest::GroupedWorker], Sweatshop.workers_in_group(:foo)
   end
 
   test "synch call" do
