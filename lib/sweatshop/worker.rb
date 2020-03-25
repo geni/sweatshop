@@ -18,15 +18,15 @@ module Sweatshop
 
     def self.send_async(method, *args)
       check_arity!(instance.method(method), args)
-      
+
       return instance.send(method, *args) unless async?
-      
+
       uid  = ::Digest::MD5.hexdigest("#{name}:#{method}:#{args}:#{Time.now.to_f}")
       task = {:args => args, :method => method, :uid => uid, :queued_at => Time.now.to_i}
-      
+
       log("Putting #{uid} on #{queue_name}")
       enqueue(task)
-      
+
       uid
     end
 
@@ -101,7 +101,7 @@ module Sweatshop
         # will just 'confirm' for now
         #queue.stop
         #sleep 2
-        confirm
+        confirm if task
       end
     end
 
