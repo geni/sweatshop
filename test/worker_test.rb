@@ -20,8 +20,8 @@ class WorkerTest < TestHelper
       worker = File.expand_path(File.dirname(__FILE__) + '/hello_worker')
       sweatd = "#{File.dirname(__FILE__)}/../lib/sweatshop/sweatd.rb"
   
-      `ruby #{sweatd} --worker-file #{worker} start`
-      `ruby #{sweatd} stop`
+      system "ruby #{sweatd} --worker-file #{worker} start"
+      system "ruby #{sweatd} stop"
   
       File.delete('sweatd.log') if File.exist?('sweatd.log')
       assert_equal 'Hi, Amos', File.read(HelloWorker::TEST_FILE)
