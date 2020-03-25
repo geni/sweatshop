@@ -1,6 +1,5 @@
-require File.expand_path(File.dirname(__FILE__) + '/../lib/sweatshop')
-require File.expand_path(File.dirname(__FILE__) + '/test_helper'     )
-require File.expand_path(File.dirname(__FILE__) + '/hello_worker'    )
+require 'test_helper'
+require 'hello_worker'
 
 class WorkerTest < TestHelper
 
