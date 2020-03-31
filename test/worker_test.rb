@@ -57,6 +57,34 @@ class WorkerTest < TestHelper
     assert_equal NoMethodError, exception.class
   end
 
+  # Issue geni/geni#2454
+  test 'dequeue from rabbit cluster' do
+    enable_server do
+      Sweatshop.config['default']['cluster'] = {
+        'localhost:5671' => {
+          :port  => 5672, # have to change port here because hash keys must differ
+          :vhost => '/',
+        },
+        'localhost:5672' => {
+          :vhost => 'two',
+        },
+      }
+
+      rabbit = Sweatshop.queue('default')
+      queue = rabbit.clients.first.queue('HelloWorker', :durable => true)
+      queue.publish(Marshal.dump(1), :persistent => true)
+      queue.publish(Marshal.dump(2), :persistent => true)
+      queue = rabbit.clients.last.queue('HelloWorker',  :durable => true)
+      queue.publish(Marshal.dump(3), :persistent => true)
+      queue.publish(Marshal.dump(4), :persistent => true)
+
+      # localhost:5672/two should be drained before localhost:5672/
+      assert_equal 3, HelloWorker.dequeue
+      assert_equal 4, HelloWorker.dequeue
+      assert_equal 1, HelloWorker.dequeue
+      assert_equal 2, HelloWorker.dequeue
+    end
+  end
 
   def enable_server
     Sweatshop.config['enable'] = true

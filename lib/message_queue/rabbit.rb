@@ -1,4 +1,5 @@
 require 'carrot'
+
 module MessageQueue
   class Rabbit < Base
 
@@ -7,29 +8,63 @@ module MessageQueue
     end
 
     def delete(queue)
-      cmd(queue, :delete)
+      cluster_cmd(queue, :delete)
     end
 
     def queue_size(queue)
-      cmd(queue, :message_count)
+      cluster_cmd(queue, :message_count, :first_response => true)
     end
 
     def enqueue(queue, data)
-      cmd(queue, :publish, Marshal.dump(data), :persistent => true)
+      cluster_cmd(queue, :publish, Marshal.dump(data), :persistent => true, :first_response => true)
     end
 
-    def dequeue(queue)
-      task = cmd(queue, :pop, :ack => true)
+    def dequeue(queue_name, ack=true)
+      task = cluster_cmd(queue_name, :pop, :ack => ack, :in_reverse => true, :first_response => true)
       return unless task
       Marshal.load(task)
     end
 
     def confirm(queue)
-      cmd(queue, :ack)
+      cluster_cmd(queue, :ack, :in_reverse => true, :first_response => true)
     end
 
     def flush_all(queue)
-      cmd(queue, :purge)
+      cluster_cmd(queue, :purge)
+    end
+
+    # Issue geni/geni#2454
+    def cluster_cmd(queue_name, command, *args)
+
+      # remove our arguments so they don't get passed through to the client calls
+      first_response  = false
+      in_reverse      = false
+      if args.last.is_a?(Hash)
+        first_response = args.last.delete(:first_response)
+        in_reverse     = args.last.delete(:in_reverse)
+      end
+      args.pop if args.last.respond_to?(:empty?) && args.last.empty?
+
+      return cmd(queue_name, command, *args) unless @opts['cluster']
+
+      results         = [] unless first_response
+      ordered_clients = in_reverse ? clients.reverse : clients
+
+      ordered_clients.each_with_index do |client, ii|
+        begin
+          result = client.queue(queue_name, :durable => true).send(command, *args)
+
+          if first_response
+            return result if result
+          else
+            results << result
+          end
+        rescue Carrot::AMQP::Server::ServerDown => e
+          Sweatshop.log "Error #{e.message}. Trying next server..."
+        end
+      end
+
+      return first_response ? nil : results
     end
 
     def cmd(queue, command, *args)
@@ -52,32 +87,8 @@ module MessageQueue
       return @client if @client
 
       if @opts['cluster']
-        @opts['cluster'].each_with_index do |server, i|
-          host, port = server.split(':')
-          begin
-            @client = Carrot.new(
-              :host   => host,
-              :port   => port.to_i,
-              :user   => @opts['user'],
-              :pass   => @opts['pass'],
-              :vhost  => @opts['vhost'],
-              :insist => @opts['insist']
-            )
+        @client = clients.first
 
-            # check server connection
-            @client.server
-
-            return @client
-          rescue Carrot::AMQP::Server::ServerDown => e
-            if i == (@opts['cluster'].size-1)
-              raise e
-            else
-              Sweatshop.log "\n*** Sweatshop failing over to #{@opts['cluster'][i+1]} ***"
-              Sweatshop.log "Error: #{e.message}\n#{e.backtrace.join("\n")}"
-              next
-            end
-          end
-        end
       else
         if @opts['host'] =~ /:/
           host, port = @opts['host'].split(':')
@@ -85,16 +96,38 @@ module MessageQueue
           host = @opts['host']
           port = @opts['port']
         end
-        @client = Carrot.new(
-          :host   => host,
-          :port   => port.to_i,
-          :user   => @opts['user'],
-          :pass   => @opts['pass'],
-          :vhost  => @opts['vhost'],
-          :insist => @opts['insist']
-        )
+        @client = Carrot.new({:host => host, :port => port.to_i}.merge(@opts))
       end
-      @client
+
+      # check server connection
+      @client.server
+
+      return @client
+    end
+
+    # Issue geni/geni#2454
+    def clients
+      @clients ||= begin
+        @opts['cluster'].map do |value|
+          if value.is_a?(Array)
+            server, opts = value
+          else
+            server, opts = value, @opts
+          end
+
+          begin
+            host, port = server.split(':')
+            client     = Carrot.new({:host => host, :port => port.to_i}.merge(opts))
+
+            # check connection
+            client.server
+
+            client
+          rescue Carrot::AMQP::Server::ServerDown => e
+            Sweatshop.log "Error: #{e.message}\n#{e.backtrace.join("\n")}"
+          end
+        end.compact
+      end
     end
 
     def client=(client)
