@@ -23,4 +23,13 @@ class TestHelper < MiniTest::Test
     define_method("test_#{name.gsub(/\W/,'_')}", &block) if block
   end
 
-end
+end # class TestHelper
+
+class Object
+
+  def tap_pp(*args)
+    pp [*args, self]
+    self
+  end
+
+end # class Object
