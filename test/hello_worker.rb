@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../lib/sweatshop')
+require_relative '../lib/sweatshop'
 
 class HelloWorker < Sweatshop::Worker
   TEST_FILE = File.dirname(__FILE__) + '/test.txt' unless defined?(TEST_FILE)

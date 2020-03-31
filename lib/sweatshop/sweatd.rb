@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/daemoned'
+require_relative 'daemoned'
 
 module Sweatshop
   class Sweatd
@@ -38,16 +38,16 @@ module Sweatshop
       Sweatshop.stop do
         remove_pid!
         puts "Restarting sweatd with #{start_cmd}..."
-        `#{start_cmd}`        
+        `#{start_cmd}`
       end
     end
-    
+
     before do
       if rails_root
         puts "Loading Rails..."
-        require rails_root + '/config/environment' 
+        require rails_root + '/config/environment'
       end
-      require File.dirname(__FILE__) + '/../sweatshop'
+      require_relative '../sweatshop'
     end
 
     daemonize(:kill_timeout => 20) do
@@ -65,11 +65,11 @@ module Sweatshop
 
       if workers.any?
         worker_str = workers.join(',')
-        puts "Starting #{worker_str}..." 
+        puts "Starting #{worker_str}..."
         $0 = "Sweatd: #{worker_str}"
         Sweatshop.workers = workers
       else
-        puts "Starting all workers..." 
+        puts "Starting all workers..."
         $0 = 'Sweatd: all'
       end
 

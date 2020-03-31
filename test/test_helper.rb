@@ -1,3 +1,7 @@
+require 'rubygems'
+require 'bundler'
+Bundler.setup(:default, :test)
+
 # This has to happen before other files are loaded
 require 'simplecov'
 SimpleCov.start do
@@ -10,6 +14,7 @@ dir = File.dirname(File.expand_path(__FILE__))
 $LOAD_PATH.unshift dir + '/../lib'
 require 'sweatshop'
 require 'minitest/autorun'
+require 'mocha/minitest'
 require 'pp'
 
 class TestHelper < MiniTest::Test
