@@ -101,7 +101,9 @@ module Sweatshop
     end
 
     def self.queue
-      @queue ||= Sweatshop.queue(queue_group.to_s)
+      # don't need to cache this
+      # because it's already cached in Sweatshop
+      @queue || Sweatshop.queue(queue_group.to_s)
     end
 
     def self.workers
