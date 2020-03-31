@@ -48,6 +48,7 @@ class WorkerTest < TestHelper
   end
 
   test "exception handler" do
+    Sweatshop.logger = :silent
     exception = nil
     HelloWorker.on_exception do |e|
       exception = e
