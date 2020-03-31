@@ -89,7 +89,7 @@ module Sweatshop
       rescue SystemExit
         exit
       rescue Exception => e
-        log("Caught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
+        log("Task: #{task.inspect}\nCaught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
         call_exception_handler(e)
       ensure
         confirm
