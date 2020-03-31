@@ -28,6 +28,7 @@ class WorkerTest < TestHelper
       #system "cat sweatd.log"
 
       File.delete('sweatd.log') if File.exist?('sweatd.log')
+      File.delete('sweatd.pid') if File.exist?('sweatd.pid')
       assert_equal 'Hi, Amos', File.read(HelloWorker::TEST_FILE)
     end
   end
