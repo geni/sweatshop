@@ -86,22 +86,13 @@ module Sweatshop
         task[:result] = instance.send(task[:method], *task[:args])
 
         call_after_task(task)
-        confirm
       rescue SystemExit
         exit
       rescue Exception => e
         log("Caught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
         call_exception_handler(e)
-
-        # the only way to re-queue messages with rabbitmq is to close and reopen the connection
-        # putting a 'sleep 2' in here to give the administrator to fix peristent problems, otherwise
-        # we'll hit an infinite loop
-        #
-        # THIS CODE IS PROBLEMATIC --- we need to put these tasks into a 'failed' queue so we don't run into infinite loops
-        # will just 'confirm' for now
-        #queue.stop
-        #sleep 2
-        confirm if task
+      ensure
+        confirm
       end
     end
 
