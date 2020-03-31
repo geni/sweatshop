@@ -4,7 +4,8 @@ require 'hello_worker'
 class WorkerTest < TestHelper
 
   def setup
-    File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
+    # use for low-level debugging
+    # Carrot.logging = true
   end
 
   def teardown
@@ -22,7 +23,10 @@ class WorkerTest < TestHelper
 
       system "ruby #{sweatd} --worker-file #{worker} start"
       system "ruby #{sweatd} stop"
-  
+
+      # help debug worker problem
+      #system "cat sweatd.log"
+
       File.delete('sweatd.log') if File.exist?('sweatd.log')
       assert_equal 'Hi, Amos', File.read(HelloWorker::TEST_FILE)
     end
