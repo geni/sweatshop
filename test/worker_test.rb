@@ -41,7 +41,6 @@ class WorkerTest < TestHelper
         ]
       HelloWorker.async_hello('Amos')
       task = HelloWorker.dequeue
-      HelloWorker.confirm
 
       assert_equal 'Amos', task[:args].first
     end
