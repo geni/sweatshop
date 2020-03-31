@@ -104,5 +104,18 @@ module MessageQueue
     def stop
       client.stop
     end
+
+    # Issue geni/geni#2454
+    def reset!
+      if @clients
+        @clients.each(&:stop)
+        @clients = nil
+      end
+
+      if @client
+        @client.stop
+        @client  = nil
+      end
+    end
   end
 end

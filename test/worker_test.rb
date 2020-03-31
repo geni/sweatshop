@@ -8,18 +8,18 @@ class WorkerTest < TestHelper
   end
 
   def teardown
-    Sweatshop.instance_variable_set("@config", nil)
-    Sweatshop.instance_variable_set("@queues", nil)
+    Sweatshop.flush_all_queues
+    Sweatshop.reset!
     File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
   end
 
   test "daemonize" do
     enable_server do
       HelloWorker.async_hello('Amos')
-  
+
       worker = File.expand_path(File.dirname(__FILE__) + '/hello_worker')
       sweatd = "#{File.dirname(__FILE__)}/../lib/sweatshop/sweatd.rb"
-  
+
       system "ruby #{sweatd} --worker-file #{worker} start"
       system "ruby #{sweatd} stop"
   

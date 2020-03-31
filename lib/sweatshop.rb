@@ -24,7 +24,7 @@ module Sweatshop
   end
 
   def workers=(workers)
-    @workers = workers 
+    @workers = workers
   end
 
   def workers_in_group(groups)
@@ -53,7 +53,7 @@ module Sweatshop
         end
         queue.stop
         @stop.call if @stop.kind_of?(Proc)
-        exit 
+        exit
       end
       sleep 1 if wait
     end
@@ -99,6 +99,16 @@ module Sweatshop
       @stop = block
     else
       @stop = true
+    end
+  end
+
+  # Issue geni/geni#2454
+  def reset!
+    @config = nil
+
+    if @queues
+      @queues.values.each(&:reset!)
+      @queues = nil
     end
   end
 

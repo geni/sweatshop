@@ -9,5 +9,6 @@ module MessageQueue
     def client;               end
     def stop;                 end
     def flush_all(queue);     end
+    def reset!;               end # Issue geni/geni#2454
   end
 end
