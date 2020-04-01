@@ -87,6 +87,30 @@ class WorkerTest < TestHelper
     end
   end
 
+  # Issue geni/geni#2454
+  test 'enqueue to rabbit cluster' do
+    enable_server do
+      Sweatshop.config['default']['cluster'] = {
+        'localhost:5671' => {
+          :port  => 5672, # have to change port here because hash keys must differ
+          :vhost => '/',
+        },
+        'localhost:5672' => {
+          :vhost => 'two',
+        },
+      }
+
+      HelloWorker.async_hello('Scott')
+      sleep 1
+
+      rabbit = Sweatshop.queue('default')
+      first = rabbit.clients.first.queue('HelloWorker', :durable => true)
+      assert_equal 1, first.message_count, 'message should be queued in first server'
+      last = rabbit.clients.last.queue('HelloWorker', :durable => true)
+      assert_equal 0, last.message_count, 'message should not be queued in last server'
+    end
+  end
+
   def enable_server
     Sweatshop.config['enable'] = true
     Sweatshop.logger = :silent

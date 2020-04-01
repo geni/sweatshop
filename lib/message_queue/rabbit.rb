@@ -16,7 +16,7 @@ module MessageQueue
     end
 
     def enqueue(queue, data)
-      cluster_cmd(queue, :publish, Marshal.dump(data), :persistent => true, :first_response => true)
+      cluster_cmd(queue, :publish, Marshal.dump(data), :persistent => true, :only_first => true)
     end
 
     def dequeue(queue_name, ack=true)
@@ -42,6 +42,7 @@ module MessageQueue
       if args.last.is_a?(Hash)
         first_response = args.last.delete(:first_response)
         in_reverse     = args.last.delete(:in_reverse)
+        only_first     = args.last.delete(:only_first)
       end
       args.pop if args.last.respond_to?(:empty?) && args.last.empty?
 
@@ -50,11 +51,13 @@ module MessageQueue
       results         = [] unless first_response
       ordered_clients = in_reverse ? clients.reverse : clients
 
-      ordered_clients.each_with_index do |client, ii|
+      ordered_clients.each do |client|
         begin
           result = client.queue(queue_name, :durable => true).send(command, *args)
 
-          if first_response
+          if only_first
+            return result
+          elsif first_response
             return result if result
           else
             results << result
