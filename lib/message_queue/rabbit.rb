@@ -12,7 +12,7 @@ module MessageQueue
     end
 
     def queue_size(queue)
-      cluster_cmd(queue, :message_count).max
+      cluster_cmd(queue, :message_count).reduce(0) {|sum, count| sum + count.to_i}
     end
 
     def enqueue(queue, data)
