@@ -108,6 +108,7 @@ class WorkerTest < TestHelper
       assert_equal 1, first.message_count, 'message should be queued in first server'
       last = rabbit.clients.last.queue('HelloWorker', :durable => true)
       assert_equal 0, last.message_count, 'message should not be queued in last server'
+      assert_equal 1, HelloWorker.queue_size, 'message should be in queue'
     end
   end
 

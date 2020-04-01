@@ -12,7 +12,7 @@ module MessageQueue
     end
 
     def queue_size(queue)
-      cluster_cmd(queue, :message_count, :first_response => true)
+      cluster_cmd(queue, :message_count).max
     end
 
     def enqueue(queue, data)
