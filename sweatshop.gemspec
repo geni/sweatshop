@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'sweatshop'
-  s.version = "1.7.0"
+  s.version = "1.7.1"
   s.date = '2011-04-05'
   s.authors = ["Amos Elliston", "Mike Stangel", "Scott Steadman"]
   s.email = 'mike@geni.com'
