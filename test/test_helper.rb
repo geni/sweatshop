@@ -2,12 +2,14 @@ require 'rubygems'
 require 'bundler'
 Bundler.setup(:default, :test)
 
-# This has to happen before other files are loaded
-require 'simplecov'
-SimpleCov.start do
-  command_name 'Unit Tests'
-  load_profile 'bundler_filter'
-  load_profile 'test_frameworks'
+unless ENV['SKIP_COVERAGE']
+  # This has to happen before other files are loaded
+  require 'simplecov'
+  SimpleCov.start do
+    command_name 'Unit Tests'
+    load_profile 'bundler_filter'
+    load_profile 'test_frameworks'
+  end
 end
 
 dir = File.dirname(File.expand_path(__FILE__))
@@ -17,7 +19,7 @@ require 'minitest/autorun'
 require 'mocha/minitest'
 require 'pp'
 
-class TestHelper < MiniTest::Test
+class TestHelper < Minitest::Test
 
   def self.test(name, &block)
     define_method("test_#{name.gsub(/\W/,'_')}", &block) if block

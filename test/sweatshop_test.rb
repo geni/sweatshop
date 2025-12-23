@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'hello_worker'
 
 class SweatshopTest < TestHelper
 
