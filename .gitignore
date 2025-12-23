@@ -1,6 +1,7 @@
 *.swp
 .project
 .bundle
+Gemfile.lock
 vendor/bundle
 coverage
 tmp/
