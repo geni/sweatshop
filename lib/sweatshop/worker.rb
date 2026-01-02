@@ -1,7 +1,9 @@
-require File.dirname(__FILE__) + '/metaid'
+require_relative '../sweatshop'
+require_relative 'metaid'
 
 module Sweatshop
   class Worker
+
     def self.inherited(subclass)
       Sweatshop.register_worker(subclass)
     end
@@ -165,5 +167,6 @@ module Sweatshop
       group ? meta_def(:_queue_group){ group } : _queue_group
     end
     queue_group :default
-  end
-end
+
+  end # class Worker
+end # module Sweatshop

@@ -6,7 +6,6 @@ $:.unshift(File.dirname(__FILE__))
 require 'message_queue/base'
 require 'message_queue/rabbit'
 require 'message_queue/kestrel'
-require 'sweatshop/worker'
 
 module Sweatshop
   extend self
@@ -72,12 +71,10 @@ module Sweatshop
   def config
     @config ||= begin
       defaults = YAML.load_file(File.dirname(__FILE__) + '/../config/defaults.yml')
-      rails_root = Rails.root rescue RAILS_ROOT rescue nil
-      if rails_root
-        file = rails_root + '/config/sweatshop.yml'
+      if defined?(Rails)
+        file = Rails.root + '/config/sweatshop.yml'
         if File.exist?(file)
-          rails_env = Rails.env rescue RAILS_ENV rescue 'development'
-          YAML.load_file(file)[rails_env]
+          YAML.load_file(file)[Rails.env]
         else
           defaults['enable'] = false
           defaults
@@ -204,10 +201,7 @@ module Sweatshop
   def constantize(str)
     Object.module_eval("#{str}", __FILE__, __LINE__)
   end
-end
 
-if defined?(RAILS_ROOT)
-  Dir.glob(RAILS_ROOT + '/app/workers/**/*.rb').each do |worker|
-    require_or_load worker unless File.directory?(worker)
-  end
-end
+end # module Sweatshop
+
+require 'sweatshop/worker'
