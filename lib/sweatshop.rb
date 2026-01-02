@@ -71,15 +71,20 @@ module Sweatshop
   def config
     @config ||= begin
       defaults = YAML.load_file(File.dirname(__FILE__) + '/../config/defaults.yml')
+pp :ONE
       if defined?(Rails)
+pp :TWO
         file = Rails.root + '/config/sweatshop.yml'
         if File.exist?(file)
+pp :TRE
           YAML.load_file(file)[Rails.env]
         else
+pp :FOR
           defaults['enable'] = false
           defaults
         end
       else
+pp :FIV
         defaults
       end
     end
