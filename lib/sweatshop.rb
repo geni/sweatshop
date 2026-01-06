@@ -73,6 +73,7 @@ module Sweatshop
       defaults = YAML.load_file(File.dirname(__FILE__) + '/../config/defaults.yml')
 pp :ONE
       if defined?(Rails)
+pp [:ROOTS, Rails.root, RAILS_ROOT]
         root = Rails.root.blank? ? RAILS_ROOT : Rails.root
         file = root + '/config/sweatshop.yml'
         if File.exist?(file).tap_pp(:TWO, file)
