@@ -1,5 +1,5 @@
 # default options
 default:
   queue: rabbit
-  host: localhost:5672
+  host: <%= ENV.fetch('RABBITMQ_HOST', 'localhost') %>:<%= ENV.fetch('RABBITMQ_PORT', '5672') %>
 enable: true

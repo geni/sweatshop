@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'digest'
+require 'erb'
 require 'yaml'
 
 $:.unshift(File.dirname(__FILE__))
@@ -70,11 +71,12 @@ module Sweatshop
 
   def config
     @config ||= begin
-      defaults = YAML.load_file(File.dirname(__FILE__) + '/../config/defaults.yml')
+      file = File.dirname(__FILE__) + '/../config/defaults.yml'
+      defaults = YAML.load(ERB.new(File.read(file)).result)
       if defined?(Rails)
         file = Rails.root.join('config/sweatshop.yml')
         if File.exist?(file)
-          YAML.load_file(file)[Rails.env]
+          YAML.load(ERB.new(File.read(file)).result)[Rails.env]
         else
           defaults['enable'] = false
           defaults
