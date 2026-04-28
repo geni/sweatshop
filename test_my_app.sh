@@ -1,19 +1,18 @@
 #!/bin/sh
 
-unset RBENV_VERSION
-export RBENV_ROOT=/opt/rbenv
-export PATH=${RBENV_ROOT}/shims:${PATH}:${RBENV_ROOT}/bin
-
-git gc
-
 bundle config --local clean true
 bundle config --local path vendor/bundle
 bundle config --local without vscode
 
-rm Gemfile.lock
+rm -rf Gemfile.lock vendor/bundle coverage
 bundle install
 
 bin/docker_run_rabbitmq.sh
 
 bundle exec rake test
+test_exit_code=$?
+
+bin/docker_stop_rabbitmq.sh
+
+exit $test_exit_code
 
