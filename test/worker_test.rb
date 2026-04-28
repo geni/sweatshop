@@ -113,6 +113,7 @@ class WorkerTest < TestHelper
     end
 
     Sweatshop.config['enable'] = true
+    Sweatshop.config['default']['host'] = "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5672"
     begin
       yield
     rescue StandardError => e
