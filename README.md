@@ -2,16 +2,10 @@
 
 Sweatshop provides an api to background resource intensive tasks. Much of the api design was copied from Workling, with a few tweaks. Currently, it runs rabbitmq and kestrel, but it can support any number of queues.
 
-## RabbitMQ Development
+## Testing
 
 ```sh
-bundle config path vendor/bundle
-bundle install
-
-# start RabbitMQ server
-bin/docker_run_rabbitmq.sh
-
-bundle exec rake test
+test_my_app.sh
 ```
 
 ## Installing
