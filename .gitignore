@@ -1,6 +1,7 @@
 *.swp
 .project
 .bundle
+.bash_history
 Gemfile.lock
 vendor/bundle
 coverage
