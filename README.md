@@ -12,7 +12,26 @@ test_my_app.sh
 
 ```sh
 # Gemfile
-gem 'sweatshop'
+gem 'sweatshop', :git => 'https://github.com/geni/sweatshop.git'
+```
+
+```yaml
+# config/sweatshop.yml
+development:
+  default:
+    queue: rabbit
+    host: localhost:5672
+  enable: true
+test:
+  default:
+    queue: rabbit
+    host: localhost:5672
+  enable: true
+production:
+  default:
+    queue: rabbit
+    host: rabbit:5672
+  enable: true
 ```
 
 ## Writing workers
@@ -112,7 +131,7 @@ If you would like to run Sweatshop as a daemon on a linux machine, use the initd
 ## Requirements
 
 - memcache (for kestrel)
-- carrot (for rabbit)
+- bunny gem (for rabbit)
 
 ## License
 

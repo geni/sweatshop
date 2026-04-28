@@ -1,8 +1,5 @@
 # default options
-default: 
+default:
   queue: rabbit
   host: localhost:5672
-  user: 'guest'
-  pass: 'guest'
-  vhost: '/'
 enable: true

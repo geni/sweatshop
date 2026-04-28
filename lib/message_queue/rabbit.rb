@@ -1,10 +1,13 @@
-require 'carrot'
+require 'bunny'
 
 module MessageQueue
   class Rabbit < Base
 
+    # A list of commands that must be executed on the client, not the queue
+    CLIENT_COMMANDS = [:basic_ack]
+
     def initialize(opts={})
-      @opts = opts
+      @opts = opts.merge(:tls => false)
     end
 
     def delete(queue)
@@ -20,13 +23,13 @@ module MessageQueue
     end
 
     def dequeue(queue_name, ack=true)
-      task = cluster_cmd(queue_name, :pop, :ack => ack, :in_reverse => true, :first_response => true)
+      @delivery_info, properties, task = cluster_cmd(queue_name, :pop, :manual_ack => !ack, :in_reverse => true, :first_response => true)
       return unless task
       Marshal.load(task)
     end
 
     def confirm(queue)
-      cluster_cmd(queue, :ack, :in_reverse => true, :first_response => true)
+      cluster_cmd(queue, :basic_ack, @delivery_info&.delivery_tag&.to_i)
     end
 
     def flush_all(queue)
@@ -53,16 +56,25 @@ module MessageQueue
 
       ordered_clients.each do |client|
         begin
-          result = client.queue(queue_name, :durable => true).send(command, *args)
+          result = if CLIENT_COMMANDS.include?(command)
+                     client.send(command, *args)
+                   else
+                     client.queue(queue_name, :durable => true).send(command, *args)
+                   end
 
           if only_first
             return result
           elsif first_response
+            if result.is_a?(Array) && result.compact.any?
+              return result
+            else
+              next
+            end
             return result if result
           else
             results << result
           end
-        rescue Carrot::AMQP::Server::ServerDown => e
+        rescue Bunny::Exception => e
           Sweatshop.log "Error #{e.message}. Trying next server..."
         end
       end
@@ -73,12 +85,16 @@ module MessageQueue
     def cmd(queue, command, *args)
       retried = false
       begin
-        client.queue(queue, :durable => true).send(command, *args)
-      rescue Carrot::AMQP::Server::ServerDown => e
+        if CLIENT_COMMANDS.include?(command)
+          client.send(command, *args)
+        else
+          client.queue(queue, :durable => true).send(command, *args)
+        end
+      rescue Bunny::Exception => e
         if not retried
           Sweatshop.log "Error #{e.message}. Retrying..."
-          @client = nil
-          retried = true
+          @client  = nil
+          retried  = true
           retry
         else
           raise e
@@ -87,7 +103,7 @@ module MessageQueue
     end
 
     def client
-      return @client if @client
+      return @client if defined?(@client) && @client
 
       if @opts['cluster']
         @client = clients.first
@@ -99,11 +115,13 @@ module MessageQueue
           host = @opts['host']
           port = @opts['port']
         end
-        @client = Carrot.new({:host => host, :port => port.to_i}.merge(@opts))
+        @opts[:logger] ||= Sweatshop.logger if Sweatshop.logger.is_a?(Logger)
+        conn             = Bunny.new({:host => host, :port => port.to_i}.merge(opts))
       end
 
       # check server connection
-      @client.server
+      conn.start
+      @client = conn.create_channel
 
       return @client
     end
@@ -119,14 +137,15 @@ module MessageQueue
           end
 
           begin
-            host, port = server.split(':')
-            client     = Carrot.new({:host => host, :port => port.to_i}.merge(opts))
+            host, port       = server.split(':')
+            @opts[:logger] ||= Sweatshop.logger if Sweatshop.logger.is_a?(Logger)
+            conn             = Bunny.new({:host => host, :port => port.to_i}.merge(opts))
 
             # check connection
-            client.server
+            conn.start
+            conn.create_channel
 
-            client
-          rescue Carrot::AMQP::Server::ServerDown => e
+          rescue Bunny::Exception => e
             Sweatshop.log "Error: #{e.message}\n#{e.backtrace.join("\n")}"
           end
         end.compact
@@ -138,18 +157,18 @@ module MessageQueue
     end
 
     def stop
-      client.stop
+      client&.close
     end
 
     # Issue geni/geni#2454
     def reset!
       if @clients
-        @clients.each(&:stop)
+        @clients.each(&:close)
         @clients = nil
       end
 
       if @client
-        @client.stop
+        @client.close
         @client  = nil
       end
     end

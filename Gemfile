@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem 'carrot', :git => 'https://github.com/geni/carrot.git'
+gem 'bunny', '~> 3.0'
 
 group :test do
   gem 'rake'

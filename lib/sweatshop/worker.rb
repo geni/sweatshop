@@ -64,8 +64,8 @@ module Sweatshop
       queue.enqueue(queue_name, task)
     end
 
-    def self.dequeue
-      queue.dequeue(queue_name)
+    def self.dequeue(ack: true)
+      queue.dequeue(queue_name, ack)
     end
 
     def self.confirm
@@ -73,9 +73,11 @@ module Sweatshop
     end
 
     def self.do_tasks
-      while task = dequeue
+      while task = dequeue(ack: false)
         do_task(task)
       end
+    ensure
+      confirm
     end
 
     def self.do_task(task)
@@ -93,8 +95,6 @@ module Sweatshop
       rescue Exception => e
         log("Task: #{task.inspect}\nCaught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
         call_exception_handler(e)
-      ensure
-        confirm
       end
     end
 
@@ -105,7 +105,8 @@ module Sweatshop
     def self.queue
       # don't need to cache this
       # because it's already cached in Sweatshop
-      @queue || Sweatshop.queue(queue_group.to_s)
+      return @queue if defined?(@queue)
+      Sweatshop.queue(queue_group.to_s)
     end
 
     def self.workers

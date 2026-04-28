@@ -3,17 +3,6 @@ require 'hello_worker'
 
 class WorkerTest < TestHelper
 
-  def setup
-    # use for low-level debugging
-    # Carrot.logging = true
-  end
-
-  def teardown
-    Sweatshop.flush_all_queues
-    Sweatshop.reset!
-    File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
-  end
-
   test "daemonize" do
     enable_server do
       HelloWorker.async_hello('Amos')
@@ -21,20 +10,23 @@ class WorkerTest < TestHelper
       worker = File.expand_path(File.dirname(__FILE__) + '/hello_worker')
       sweatd = "#{File.dirname(__FILE__)}/../lib/sweatshop/sweatd.rb"
 
-      system "ruby #{sweatd} --worker-file #{worker} start"
-      system "ruby #{sweatd} stop"
+      File.delete('sweatd.log') if File.exist?('sweatd.log')
+      system "bundle exec ruby #{sweatd} --worker-file #{worker} start"
+      system "bundle exec ruby #{sweatd} stop"
 
       # help debug worker problem
       #system "cat sweatd.log"
 
-      File.delete('sweatd.log') if File.exist?('sweatd.log')
-      File.delete('sweatd.pid') if File.exist?('sweatd.pid')
       assert_equal 'Hi, Amos', File.read(HelloWorker::TEST_FILE)
+
+    ensure
+      File.delete('sweatd.pid')           if File.exist?('sweatd.pid')
+      File.delete(HelloWorker::TEST_FILE) if File.exist?(HelloWorker::TEST_FILE)
     end
   end
 
   test "connect to fallback servers if the default one is down" do
-    enable_server do
+    enable_server(logging: false) do
       Sweatshop.config['default']['cluster'] =
         [
          'localhost:5671', # invalid
@@ -112,15 +104,25 @@ class WorkerTest < TestHelper
     end
   end
 
-  def enable_server
+  def enable_server(logging: false)
+    if logging
+      Sweatshop.logger = Logger.new(STDOUT)
+      STDOUT.sync = true
+    else
+      Sweatshop.logger = :silent
+    end
+
     Sweatshop.config['enable'] = true
-    Sweatshop.logger = :silent
     begin
       yield
-    rescue Exception => e
+    rescue StandardError => e
       puts e.message
       puts e.backtrace.join("\n")
       fail "\n\n*** Functional test failed, is the rabbit server running on localhost? ***\n"
+
+    ensure
+      Sweatshop.flush_all_queues
+      Sweatshop.reset!
     end
   end
 end
