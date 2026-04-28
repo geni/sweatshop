@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Enable debugging
-set -x
-
 # abort on any error
 set -e
 
