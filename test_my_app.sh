@@ -15,3 +15,4 @@ test_exit_code=$?
 [[ " $* " =~ " --no-docker " ]] || bin/docker_stop_rabbitmq.sh
 
 exit $test_exit_code
+
