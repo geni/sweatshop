@@ -1,8 +1,5 @@
 #!/bin/sh
 
-docker run -d --name rabbitmq \
-  -p 5672:5672 \
-  -p 15672:15672 \
-  -e RABBITMQ_DEFAULT_USER=guest \
-  -e RABBITMQ_DEFAULT_PASS=guest \
-  rabbitmq:management
+cd docker
+
+docker compose up -d
