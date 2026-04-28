@@ -29,8 +29,8 @@ class WorkerTest < TestHelper
     enable_server(logging: false) do
       Sweatshop.config['default']['cluster'] =
         [
-         'localhost:5671', # invalid
-         'localhost:5672'  # valid
+         "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5671", # invalid
+         "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5672"  # valid
         ]
       HelloWorker.async_hello('Amos')
       task = HelloWorker.dequeue
@@ -54,11 +54,11 @@ class WorkerTest < TestHelper
   test 'dequeue from rabbit cluster' do
     enable_server do
       Sweatshop.config['default']['cluster'] = {
-        'localhost:5671' => {
+        "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5671" => {
           :port  => 5672, # have to change port here because hash keys must differ
           :vhost => '/',
         },
-        'localhost:5672' => {
+        "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5672" => {
           :vhost => 'two',
         },
       }
@@ -83,11 +83,11 @@ class WorkerTest < TestHelper
   test 'enqueue to rabbit cluster' do
     enable_server do
       Sweatshop.config['default']['cluster'] = {
-        'localhost:5671' => {
+        "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5671" => {
           :port  => 5672, # have to change port here because hash keys must differ
           :vhost => '/',
         },
-        'localhost:5672' => {
+        "#{ENV.fetch('RABBITMQ_HOST', 'localhost')}:5672" => {
           :vhost => 'two',
         },
       }
