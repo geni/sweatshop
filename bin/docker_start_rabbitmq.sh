@@ -23,8 +23,7 @@ docker run -d --rm \
   -v rabbitmq_data:/var/lib/rabbitmq \
   rabbitmq:management
 
-#docker exec rabbitmq bash -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit\@${HOSTNAME}.pid'
-sleep 10
+docker exec rabbitmq bash -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit\@${HOSTNAME}.pid'
 docker exec rabbitmq rabbitmqctl add_vhost two
 docker exec rabbitmq rabbitmqctl set_permissions -p two guest ".*" ".*" ".*"
 
