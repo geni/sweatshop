@@ -15,7 +15,8 @@ group :test do
 end
 
 group :vscode do
-  gem 'debase',         :require => false
-  gem 'ruby-debug-ide', :require => false
-  gem 'solargraph',     :require => false
+# Install these locally
+#  gem 'debase',         :require => false
+#  gem 'ruby-debug-ide', :require => false
+#  gem 'solargraph',     :require => false
 end
