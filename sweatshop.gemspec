@@ -7,6 +7,10 @@ Gem::Specification.new do |s|
   s.authors = ["Amos Elliston", "Mike Stangel", "Scott Steadman"]
   s.email = ['mike@geni.com', 'scott.steadman@geni.com']
   s.summary = 'A simple asynchronous worker queue built on top of RabbitMQ/AMQP'
+
+  s.add_dependency 'bunny', '~>3.0'
+  s.add_dependency 'erb'
+
   if ::RUBY_VERSION < '2.7'
     s.executables = ["sweatd"]
   end

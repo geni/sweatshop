@@ -2,9 +2,6 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem 'bunny', '~> 3.0'
-gem 'erb'
-
 group :test do
   gem 'rake'
   gem 'method_source'
