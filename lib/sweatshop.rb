@@ -193,7 +193,7 @@ module Sweatshop
   end
 
   def logger
-    @logger
+    defined?(@logger) && @logger
   end
 
   def logger=(logger)

@@ -7,7 +7,8 @@ module MessageQueue
     CLIENT_COMMANDS = [:basic_ack]
 
     def initialize(opts={})
-      @opts = opts.merge(:tls => false)
+      opts[:tls] = false unless opts.key?(:tls)
+      @opts = opts
     end
 
     def delete(queue)
@@ -23,18 +24,34 @@ module MessageQueue
     end
 
     def dequeue(queue_name, ack=true)
-      @delivery_info, properties, task = cluster_cmd(queue_name, :pop, :manual_ack => !ack, :in_reverse => true, :first_response => true)
+      @delivery_info, _, task = cluster_cmd(queue_name, :pop, :manual_ack => !ack, :in_reverse => true, :first_response => true)
       return unless task
       Marshal.load(task)
     end
 
     def confirm(queue)
-      cluster_cmd(queue, :basic_ack, @delivery_info&.delivery_tag&.to_i)
+      return unless defined?(@delivery_info) && @delivery_info
+      cluster_cmd(queue, :basic_ack, @delivery_info.delivery_tag.to_i)
     end
 
     def flush_all(queue)
       cluster_cmd(queue, :purge)
     end
+
+    # Issue geni/geni#2454
+    def reset!
+      if defined?(@clients) && @clients
+        @clients.each(&:close)
+        @clients = nil
+      end
+
+      if defined?(@client) && @client
+        @client.close
+        @client  = nil
+      end
+    end
+
+  private
 
     # Issue geni/geni#2454
     def cluster_cmd(queue_name, command, *args)
@@ -160,17 +177,5 @@ module MessageQueue
       client&.close
     end
 
-    # Issue geni/geni#2454
-    def reset!
-      if @clients
-        @clients.each(&:close)
-        @clients = nil
-      end
-
-      if @client
-        @client.close
-        @client  = nil
-      end
-    end
-  end
-end
+  end # class Rabbit
+end # module MessageQueue

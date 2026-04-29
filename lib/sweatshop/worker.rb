@@ -1,4 +1,3 @@
-require_relative '../sweatshop'
 require_relative 'metaid'
 
 module Sweatshop
@@ -135,7 +134,7 @@ module Sweatshop
     def self.before_task(&block)
       if block
         @before_task = block
-      else
+      elsif defined?(@before_task)
         @before_task
       end
     end
@@ -143,7 +142,7 @@ module Sweatshop
     def self.after_task(&block)
       if block
         @after_task = block
-      else
+      elsif defined?(@after_task)
         @after_task
       end
     end
@@ -151,7 +150,7 @@ module Sweatshop
     def self.on_exception(&block)
       if block
         @on_exception = block
-      else
+      elsif defined?(@on_exception)
         @on_exception
       end
     end

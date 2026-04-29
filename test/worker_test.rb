@@ -64,10 +64,10 @@ class WorkerTest < TestHelper
       }
 
       rabbit = Sweatshop.queue('default')
-      queue = rabbit.clients.first.queue('HelloWorker', :durable => true)
+      queue = rabbit.send(:clients).first.queue('HelloWorker', :durable => true)
       queue.publish(Marshal.dump(1), :persistent => true)
       queue.publish(Marshal.dump(2), :persistent => true)
-      queue = rabbit.clients.last.queue('HelloWorker',  :durable => true)
+      queue = rabbit.send(:clients).last.queue('HelloWorker',  :durable => true)
       queue.publish(Marshal.dump(3), :persistent => true)
       queue.publish(Marshal.dump(4), :persistent => true)
 
@@ -96,9 +96,9 @@ class WorkerTest < TestHelper
       sleep 1
 
       rabbit = Sweatshop.queue('default')
-      first = rabbit.clients.first.queue('HelloWorker', :durable => true)
+      first = rabbit.send(:clients).first.queue('HelloWorker', :durable => true)
       assert_equal 1, first.message_count, 'message should be queued in first server'
-      last = rabbit.clients.last.queue('HelloWorker', :durable => true)
+      last = rabbit.send(:clients).last.queue('HelloWorker', :durable => true)
       assert_equal 0, last.message_count, 'message should not be queued in last server'
       assert_equal 1, HelloWorker.queue_size, 'message should be in queue'
     end
