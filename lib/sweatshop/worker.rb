@@ -36,7 +36,7 @@ module Sweatshop
     end
 
     def self.instance
-      @instance ||= new
+      new
     end
 
     def self.config
