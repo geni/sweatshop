@@ -138,11 +138,11 @@ module MessageQueue
         end
         @opts[:logger] ||= Sweatshop.logger if Sweatshop.logger.is_a?(Logger)
         conn             = Bunny.new({:host => host, :port => port.to_i}.merge(opts))
-      end
 
-      # check server connection
-      conn.start
-      @client = conn.create_channel
+        # check server connection
+        conn.start
+        @client = conn.create_channel
+      end
 
       return @client
     end
