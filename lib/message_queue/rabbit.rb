@@ -34,6 +34,10 @@ module MessageQueue
       cluster_cmd(queue, :basic_ack, @delivery_info.delivery_tag.to_i)
     end
 
+    def stop
+      client&.close
+    end
+
     def flush_all(queue)
       cluster_cmd(queue, :purge)
     end
@@ -171,10 +175,6 @@ module MessageQueue
 
     def client=(client)
       @client = client
-    end
-
-    def stop
-      client&.close
     end
 
   end # class Rabbit
