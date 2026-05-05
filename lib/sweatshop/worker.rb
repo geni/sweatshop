@@ -44,7 +44,7 @@ module Sweatshop
     end
 
     def self.queue_name
-      @queue_name ||= self.to_s
+      to_s
     end
 
     def self.flush_queue
