@@ -23,9 +23,9 @@ module Sweatshop
       return instance.send(method, *args) unless async?
 
       uid  = ::Digest::MD5.hexdigest("#{name}:#{method}:#{args}:#{Time.now.to_f}")
-      task = {:args => args, :method => method, :uid => uid, :queued_at => Time.now.to_i}
+      task = {:class => name, :method => method, :args => args, :uid => uid, :queued_at => Time.now.to_i}
 
-      log("Putting #{uid} on #{queue_name}")
+      log("Putting #{name}.#{method} on #{queue_name} (uid #{uid})")
       enqueue(task)
 
       uid
@@ -80,21 +80,31 @@ module Sweatshop
     end
 
     def self.do_task(task)
-      begin
-        task.merge!( :worker_class => self )
-        call_before_task(task)
+      worker_class =  if task.key?(:class)
+                        if task[:class].respond_to?(:constantize)
+                          task[:class].constantize
+                        else
+                          Object.const_get(task[:class])
+                        end
+                      end
+      worker_class ||= self
 
-        queued_at = task[:queued_at] ? "(queued #{Time.at(task[:queued_at]).strftime('%Y/%m/%d %H:%M:%S')})" : ''
-        log("Dequeuing #{queue_name}::#{task[:method]} #{queued_at}")
-        task[:result] = instance.send(task[:method], *task[:args])
+      task[:worker_class] = worker_class
+      call_before_task(task)
 
-        call_after_task(task)
-      rescue SystemExit
-        exit
-      rescue Exception => e
-        log("Task: #{task.inspect}\nCaught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
-        call_exception_handler(e)
-      end
+      queued_at = task[:queued_at] ? "(queued #{Time.at(task[:queued_at]).strftime('%Y/%m/%d %H:%M:%S')})" : ''
+      uid       = task[:uid]       ? "(uid #{task[:uid]})" : ''
+      log("Dequeuing #{task[:class]}::#{task[:method]} from #{queue_name} #{queued_at} #{uid}")
+
+      instance = worker_class.respond_to?(:instance) ? worker_class.instance : worker_class.new
+      task[:result] = instance.send(task[:method], *task[:args])
+
+      call_after_task(task)
+    rescue SystemExit
+      exit
+    rescue Exception => e
+      log("Task: #{task.inspect}\nCaught Exception: #{e.message}, \n#{e.backtrace.join("\n")}")
+      call_exception_handler(e)
     end
 
     def self.queue=(queue)
