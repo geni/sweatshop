@@ -22,6 +22,40 @@ class SweatshopTest < TestHelper
     assert_equal [], Sweatshop.workers_in_group(:missing)
   end
 
+  # Reloading (Zeitwerk on Rails 8, Dependencies on Rails 2.3) redefines the worker class, which
+  # used to leave the superseded class in the registry and double-count its queue.
+  test 'register_worker replaces a reloaded worker of the same name' do
+    # the class keyword (not Class.new) so the name is set by the time inherited fires,
+    # which is how a reloader redefines app/workers/reloaded_worker.rb
+    definition = 'class ReloadedWorker < Sweatshop::Worker; end'
+
+    Object.class_eval(definition)
+    first = Object.const_get(:ReloadedWorker)
+
+    Object.send(:remove_const, :ReloadedWorker)
+    Object.class_eval(definition)
+    second = Object.const_get(:ReloadedWorker)
+
+    registered = Sweatshop.registered_workers.select {|worker| worker.name == 'ReloadedWorker'}
+
+    refute_equal first, second
+    assert_equal [second], registered
+  ensure
+    Sweatshop.registered_workers.reject! {|worker| worker.name == 'ReloadedWorker'}
+    Object.send(:remove_const, :ReloadedWorker) if Object.const_defined?(:ReloadedWorker)
+  end
+
+  test 'register_worker keeps distinct anonymous workers' do
+    first  = Class.new(Sweatshop::Worker)
+    second = Class.new(Sweatshop::Worker)
+
+    assert_includes Sweatshop.registered_workers, first
+    assert_includes Sweatshop.registered_workers, second
+  ensure
+    Sweatshop.registered_workers.delete(first)
+    Sweatshop.registered_workers.delete(second)
+  end
+
   test "synch call" do
     worker = HelloWorker.new
     assert_equal "Hi, Amos", worker.hello('Amos')

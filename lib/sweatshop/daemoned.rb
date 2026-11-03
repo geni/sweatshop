@@ -369,7 +369,7 @@ module Daemoned
     def log_dir
       options[:log_dir] ||= begin
         LOG_PATHS.detect do |path|
-          File.exists?(File.expand_path(path))        
+          File.exist?(File.expand_path(path))
         end
       end               
     end

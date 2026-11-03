@@ -133,6 +133,50 @@ If you would like to run Sweatshop as a daemon on a linux machine, use the initd
 - memcache (for kestrel)
 - bunny gem (for rabbit)
 
+## Ruby and Rails compatibility
+
+Sweatshop is tested against Ruby 2.7.8 with Rails 2.3 and Ruby 3.4.1 with Rails 8.0, from a single
+code path -- there are no version branches in the gem. A single RabbitMQ cluster can be shared by
+producers and consumers running on either combination.
+
+Rails is optional. When `Rails` is defined and `Rails.root` is set, sweatshop reads
+`config/sweatshop.yml` for `Rails.env`; otherwise it falls back to the gem's own `config/defaults.yml`.
+If the config file exists but has no section for the current environment, sweatshop logs that and
+disables itself rather than raising.
+
+### Upgrading: keyword arguments
+
+Ruby 3 stopped converting a trailing Hash into keyword arguments. Sweatshop tags the arguments it
+queues with `ruby2_keywords`, and the tag survives `Marshal`, so a worker method that takes keywords
+receives keywords:
+
+```ruby
+class EmailWorker < Sweatshop::Worker
+  def send_mail(to, cc: nil, bcc: nil)
+    ...
+  end
+end
+
+EmailWorker.async_send_mail(1, :cc => 2)   # cc: arrives as a keyword
+```
+
+A worker whose method takes a positional Hash is unaffected:
+
+```ruby
+class EmailWorker < Sweatshop::Worker
+  def send_mail(to, options)
+    ...
+  end
+end
+
+EmailWorker.async_send_mail(1, :cc => 2)   # options arrives as {:cc => 2}
+```
+
+Messages enqueued by a release that predates this change carry no tag, so their trailing Hash
+arrives positionally. Workers that take a positional Hash are fine; workers that take keywords are
+not, and would fail on Ruby 3 with an `ArgumentError`. **Drain the queues before upgrading a worker
+that takes keyword arguments.**
+
 ## License
 
 Copyright (c) 2009 Amos Elliston, Geni.com; Published under The MIT License, see License

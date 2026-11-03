@@ -31,6 +31,14 @@ module Sweatshop
       uid
     end
 
+    # Ruby 3 no longer converts a trailing Hash into keyword arguments, so a worker method that
+    # takes keywords would get them as a positional Hash once they had passed through our *args.
+    # ruby2_keywords tags that Hash instead, and the tag survives Marshal, so the keywords are
+    # restored when do_task splats task[:args] -- on Ruby 2.7 and Ruby 3 alike, and in either
+    # direction between a 2.7 producer and a 3.x consumer.
+    singleton_class.send(:ruby2_keywords, :method_missing)
+    singleton_class.send(:ruby2_keywords, :send_async)
+
     def self.async?
       Sweatshop.enabled?
     end
@@ -114,7 +122,8 @@ module Sweatshop
     def self.queue
       # don't need to cache this
       # because it's already cached in Sweatshop
-      return @queue if defined?(@queue)
+      # a nil override means "go back to the configured queue" (see Sweatshop.cluster_info)
+      return @queue if defined?(@queue) && @queue
       Sweatshop.queue(queue_group.to_s)
     end
 

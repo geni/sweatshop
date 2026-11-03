@@ -11,8 +11,18 @@ require 'message_queue/kestrel'
 module Sweatshop
   extend self
 
+  # Code reloading (Zeitwerk on Rails 8, Dependencies on Rails 2.3) hands us a brand new Class
+  # object for the same worker on every reload, so registering by object identity alone would
+  # leave the stale classes behind and double-count every queue.  Named workers replace any
+  # earlier class of the same name; anonymous ones can only be deduped by identity.
   def register_worker(klass)
-    registered_workers << klass unless registered_workers.include?(klass)
+    if klass.name
+      registered_workers.reject! {|worker| worker.name == klass.name}
+    elsif registered_workers.include?(klass)
+      return
+    end
+
+    registered_workers << klass
   end
 
   def registered_workers
@@ -71,12 +81,17 @@ module Sweatshop
 
   def config
     @config ||= begin
-      file = File.dirname(__FILE__) + '/../config/defaults.yml'
-      defaults = YAML.load(ERB.new(File.read(file)).result)
-      if defined?(Rails)
-        file = Rails.root.join('config/sweatshop.yml')
+      defaults = load_yaml(File.dirname(__FILE__) + '/../config/defaults.yml')
+
+      if rails_root
+        file = File.join(rails_root.to_s, 'config', 'sweatshop.yml')
         if File.exist?(file)
-          YAML.load(ERB.new(File.read(file)).result)[Rails.env]
+          env = rails_env
+          load_yaml(file)[env] || begin
+            log("No sweatshop configuration for #{env} in #{file}, disabling sweatshop")
+            defaults['enable'] = false
+            defaults
+          end
         else
           defaults['enable'] = false
           defaults
@@ -85,6 +100,29 @@ module Sweatshop
         defaults
       end
     end
+  end
+
+  # Psych 4 (Ruby 3.1+) made YAML.load safe by default, which rejects the aliases and symbols
+  # that sweatshop.yml files are allowed to use.  YAML.unsafe_load keeps Psych 3's behaviour but
+  # does not exist on the Psych that ships with Ruby 2.7, hence the respond_to? rather than a
+  # version check.
+  def load_yaml(file)
+    yaml = ERB.new(File.read(file)).result
+    YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(yaml) : YAML.load(yaml)
+  end
+
+  # Rails 2.3 defines Rails.root as nil unless RAILS_ROOT is set, and Rails may be loaded
+  # without an application at all (rake tasks, gems that reference the constant).  Anything
+  # without a root is treated as "not running under Rails".
+  def rails_root
+    return nil unless defined?(Rails) && Rails.respond_to?(:root)
+    Rails.root
+  end
+
+  # Rails 2.3 returns an ActiveSupport::StringInquirer here, Rails 8 an EnvironmentInquirer;
+  # to_s gives us a plain String to index the config hash with either way.
+  def rails_env
+    Rails.env.to_s
   end
 
   def daemon?
